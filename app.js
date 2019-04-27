@@ -2,7 +2,7 @@
 var budgetController = (function()  {
    
   // constructor of type Expense
-  var Expense = function(id,desc, value) {
+  var Expense = function(id, desc, value) {
     this.id = id;
     this.desc = desc;
     this.value = value; 
@@ -15,6 +15,15 @@ var budgetController = (function()  {
     this.value = value;
   }
 
+  var calculateTotal = function(type) {
+    var sum = 0;
+    console.log('type', type)
+    data.allRecords[type].forEach(function(element) {
+      sum = sum + element.value
+    }) 
+    data.totals[type] = sum
+  };
+
   // incomes & expenses data structure
   var data = {
     allRecords: {
@@ -24,15 +33,17 @@ var budgetController = (function()  {
     totals: {
       exp: 0,
       inc: 0
-    }
+    },
+    budget: 0,
+    percentage: -1
   }
 
   return {
     // add new Expense or Income
-    addRecord: function(type,des,val) {
+    addRecord: function(type, des, val) {
       var newRecord, ID;
 
-      // assign ID
+      // assign ID to expense, income 
       if(data.allRecords[type].length > 0) {
         ID = data.allRecords[type][data.allRecords[type].length-1].id + 1
       }
@@ -53,6 +64,32 @@ var budgetController = (function()  {
       return newRecord;
     },
 
+    calculateBudget : function() {
+      // calculate total income and expenses
+      calculateTotal('inc');
+      calculateTotal('exp');
+
+      // calculate the budget: income - expenses
+      if(data.totals.inc > 0) {
+        data.budget = data.totals['inc'] - data.totals['exp']
+        // calculate the prercentage of income that we spent
+        data.percentage = Math.round((data.totals.exp / data.totals.inc) * 100)
+      }
+      else {
+        data.percentage = -1
+      }
+
+    },
+
+    getBudget: function () {
+      return {
+        budget: data.budget,
+        totalIncome: data.totals.inc,
+        totalExpense: data.totals.exp,
+        percentage: data.percentage
+      }
+    },
+
     testing: function () {
       console.log(data);
     }
@@ -71,7 +108,13 @@ var UIController = (function () {
     value: '.add__value',
     button: '.add__btn',
     incomeContainer: '.income__list',
-    expenseContainer: '.expenses__list'
+    expenseContainer: '.expenses__list',
+    budgetLabel: '.budget__value',
+    incomeLabel: '.budget__income--value',
+    expensesLabel: '.budget__expenses--value',
+    percentageLabel: '.budget__expenses--percentage'
+
+
   };
   
   
@@ -81,7 +124,7 @@ var UIController = (function () {
       return {
         type : document.querySelector(DOMstrings.type).value,
         description : document.querySelector(DOMstrings.description).value,
-        value : document.querySelector(DOMstrings.value).value
+        value : parseFloat(document.querySelector(DOMstrings.value).value)
       };
     },
 
@@ -144,7 +187,21 @@ var UIController = (function () {
 
       // sets focus on the first element on the array
       fieldsArray[0].focus()
-    }
+    },
+
+    displayBudget: function(obj) {
+      document.querySelector(DOMstrings.budgetLabel).textContent = obj.budget
+      document.querySelector(DOMstrings.incomeLabel).textContent = obj.totalIncome
+      document.querySelector(DOMstrings.expensesLabel).textContent = obj.totalExpense
+      document.querySelector(DOMstrings.percentageLabel).textContent = obj.percentage
+      
+      if(obj.percentage > 0) {
+        document.querySelector(DOMstrings.percentageLabel).textContent = obj.percentage + '%'
+      }
+      else {
+        document.querySelector(DOMstrings.percentageLabel).textContent = '-'
+      }
+    },
   };
   
 }) ();
@@ -167,6 +224,18 @@ var appController = (function(budgetCtrl, UICtrl) {
     });
     
   }
+
+  var updateBudget = function() {
+
+    // Calculate budget
+      budgetController.calculateBudget()
+    
+    // Returns the budget
+    var budget = budgetController.getBudget()
+
+    // Display the budget on the UI
+    UIController.displayBudget(budget)
+  }
   
   var addRecord = function() {
     var input;
@@ -174,23 +243,34 @@ var appController = (function(budgetCtrl, UICtrl) {
 
     // 1. Get the field input data
     input = UICtrl.getInput();
-    console.log('input', input)
-    
-    // 2. Add record to the budgetController
-    record = budgetCtrl.addRecord(input.type, input.description, input.value)
-  
-    // 3. Add record to the UI
-    UIController.addListRecord(record, input.type);
 
-    // 4. Clear Fields
-    UIController.clearFields();
+    if (input.description !== "" && !isNaN(input.value) && input.value > 0) {
+      // 2. Add record to the budgetController
+      record = budgetCtrl.addRecord(input.type, input.description, input.value)
+    
+      // 3. Add record to the UI
+      UIController.addListRecord(record, input.type);
+  
+      // 4. Clear Fields
+      UIController.clearFields();
+  
+      // 5. Calculate and update Budget
+      updateBudget()
+    } 
+    
   
   }
   
   return {
     // set eventlisteners on app start
     init: function () {
-      console.log("App started")
+      console.log("App started");
+      UIController.displayBudget({
+        budget: 0,
+        totalIncome: 0,
+        totalExpense: 0,
+        percentage: -1
+      });
       setEventListeners();
     }
   }
