@@ -86,12 +86,15 @@ var budgetController = (function()  {
       calculateTotal('exp');
 
       // calculate the budget: income - expenses
+      data.budget = data.totals['inc'] - data.totals['exp']
+      
       if(data.totals.inc > 0) {
-        data.budget = data.totals['inc'] - data.totals['exp']
+        //data.budget = data.totals['inc'] - data.totals['exp']
         // calculate the prercentage of income that we spent
         data.percentage = Math.round((data.totals.exp / data.totals.inc) * 100)
       }
       else {
+        //data.budget = data.totals['inc'] - data.totals['exp']
         data.percentage = -1
       }
 
