@@ -189,6 +189,12 @@ var UIController = (function () {
       document.querySelector(element).insertAdjacentHTML('beforeend', newHtml);
     },
 
+    deleteListRecord: function(selectorId) {
+      var element = document.getElementById(selectorId)
+      // element can be only removed as a child element of a parent
+      element.parentNode.removeChild(element)
+    },
+
     clearFields: function() {
       var fields, fieldsArray;
 
@@ -287,11 +293,13 @@ var appController = (function(budgetCtrl, UICtrl) {
       id = parseInt(splitId[1])
 
       // 1. delete item from the data structure
-      budgetController.deleteRecord(type,id)
+      budgetController.deleteRecord(type,id);
 
       // 2. delete item from the interface
+      UIController.deleteListRecord(recordId);
 
       // 3. update and show the new budget
+      updateBudget();
     }
   }
   
