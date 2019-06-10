@@ -64,6 +64,22 @@ var budgetController = (function()  {
       return newRecord;
     },
 
+
+    deleteRecord: function(type, id) {
+      var idsArray, index
+
+      // map returns new array and return index of the 'to-delete' item
+      idsArray = data.allRecords[type].map(function(current) {
+        return current.id
+      })
+      index = idsArray.indexOf(id);
+
+      if(index !== -1) {
+        data.allRecords[type].splice(index, 1)
+      }
+
+    },
+
     calculateBudget : function() {
       // calculate total income and expenses
       calculateTotal('inc');
@@ -112,9 +128,8 @@ var UIController = (function () {
     budgetLabel: '.budget__value',
     incomeLabel: '.budget__income--value',
     expensesLabel: '.budget__expenses--value',
-    percentageLabel: '.budget__expenses--percentage'
-
-
+    percentageLabel: '.budget__expenses--percentage',
+    container: '.container'
   };
   
   
@@ -141,7 +156,7 @@ var UIController = (function () {
       {
         element = DOMstrings.incomeContainer
 
-        html = ` <div class="item clearfix" id="income-%id%">
+        html = ` <div class="item clearfix" id="inc-%id%">
                     <div class="item__description">%description%</div>
                     <div class="right clearfix">
                         <div class="item__value">%value%</div>
@@ -155,7 +170,7 @@ var UIController = (function () {
       {
         element = DOMstrings.expenseContainer
 
-        html = `<div class="item clearfix" id="expense-%id%">
+        html = `<div class="item clearfix" id="exp-%id%">
           <div class="item__description">%description%</div>
           <div class="right clearfix">
             <div class="item__value">%value%</div>
@@ -223,6 +238,8 @@ var appController = (function(budgetCtrl, UICtrl) {
       } 
     });
     
+    // event listerners for buttod DELETE (cross)
+    document.querySelector(DOM.container).addEventListener('click', deleteRecord);
   }
 
   var updateBudget = function() {
@@ -257,8 +274,25 @@ var appController = (function(budgetCtrl, UICtrl) {
       // 5. Calculate and update Budget
       updateBudget()
     } 
-    
-  
+  }
+
+  var deleteRecord = function (event) {
+    var recordId;
+    recordId = event.target.parentNode.parentNode.parentNode.parentNode.id; // event target = where we clicked, up to the id of the element we are interested to delete
+
+    // as there are no other Ids within the doc
+    if(recordId) {
+      splitId = recordId.split('-')
+      type = splitId[0]
+      id = parseInt(splitId[1])
+
+      // 1. delete item from the data structure
+      budgetController.deleteRecord(type,id)
+
+      // 2. delete item from the interface
+
+      // 3. update and show the new budget
+    }
   }
   
   return {
